@@ -1,0 +1,26 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment variables
+.env
+
+# Logs
+logs/
+*.log
+logfile*
+
+# Database files
+database.sqlite
+database.sqlite-journal
+
+# Puppeteer cache & Chromium binary (if applicable)
+puppeteer/
+.puppeteer/
+
+# IDE & Editor files
+.vscode/
+.idea/
+.DS_Store
+*.swp
