@@ -8,11 +8,6 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 dotenv.config();
 
-console.log('dotenv loaded');
-console.log('PORT:', process.env.PORT);
-console.log('VAPID_PUBLIC_KEY:', process.env.VAPID_PUBLIC_KEY);
-console.log('VAPID_PRIVATE_KEY:', process.env.VAPID_PRIVATE_KEY);
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
