@@ -8,7 +8,7 @@ const login = async (username, password) => {
   const response = await session.post(process.env.AIUB_PORTAL_URL, { UserName: username, Password: password });
   const $ = cheerio.load(response.data);
 
-  if (!response.request.res.responseUrl.includes('https://portal.aiub.edu/Student')) {
+  if (!response.request.res.responseUrl.includes('https://portal.aiub.edu/')) {
     if ($('#captcha').css('display') !== 'none') throw new Error('Captcha required');
     throw new Error('Invalid username or password');
   }
@@ -17,7 +17,7 @@ const login = async (username, password) => {
 };
 
 const getStudentData = async (session) => {
-  const response = await session.get('https://portal.aiub.edu/Student');
+  const response = await session.get('https://portal.aiub.edu/Student/Home/Index/5');
   const $ = cheerio.load(response.data);
   let user = $('.navbar-link').text().trim();
   if (user.includes(',')) {
