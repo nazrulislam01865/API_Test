@@ -1,37 +1,63 @@
-const puppeteer = require("puppeteer-extra");
-const StealthPlugin = require("puppeteer-extra-plugin-stealth");
-const jwt = require("jsonwebtoken");
-const { encryptSession } = require("../utils/encrypt");
+const { login, getStudentData, getCurriculumData, getCompletedCourses, getSemesterRoutine } = require('../services/aiubService');
 
-puppeteer.use(StealthPlugin());
+const loginHandler = async (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
 
-const sessionStore = {};
+  const { username, password } = req.query;
+  if (!username || !password) {
+    res.write(`data: ${JSON.stringify({ status: 'error', message: 'Username and password required' })}\n\n`);
+    return res.end();
+  }
 
-exports.login = async (req, res) => {
-    const { username, password } = req.body;
+  try {
+    res.write(`data: ${JSON.stringify({ status: 'running', message: 'Processing request...' })}\n\n`);
+    const session = await login(username, password);
+    res.write(`data: ${JSON.stringify({ status: 'running', message: 'Logged in to portal' })}\n\n`);
 
-    try {
-        const browser = await puppeteer.launch({ headless: true });
-        const page = await browser.newPage();
-        
-        await page.goto("https://portal.aiub.edu", { waitUntil: "domcontentloaded" });
-        await page.type("#username", username);
-        await page.type("#password", password);
-        await Promise.all([page.click("#login-button"), page.waitForNavigation()]);
+    const { user, currentSemester, semesterOptions } = await getStudentData(session);
+    res.write(`data: ${JSON.stringify({ status: 'running', message: 'Getting curriculum data...' })}\n\n`);
+    const courseMap = await getCurriculumData(session);
+    res.write(`data: ${JSON.stringify({ status: 'running', message: 'Completed getting curriculum data' })}\n\n`);
 
-        const cookies = await page.cookies();
-        sessionStore[username] = encryptSession(cookies);
-        await browser.close();
+    const [completedCourses, currentSemesterCourses, preRegisteredCourses] = await getCompletedCourses(session, currentSemester);
+    const semesterClassRoutine = await getSemesterRoutine(session, semesterOptions);
 
-        const token = jwt.sign({ username }, process.env.JWT_SECRET, { expiresIn: "1h" });
-        res.cookie("token", token, { httpOnly: true, secure: true, sameSite: "Strict" });
-        res.json({ message: "Login successful" });
-    } catch (error) {
-        res.status(500).json({ error: "Login failed" });
+    const unlockedCourses = {};
+    for (const [code, course] of Object.entries(completedCourses)) {
+      if (course.grade === 'D') {
+        unlockedCourses[code] = { courseName: course.courseName, credit: courseMap[code].credit, prerequisites: courseMap[code].prerequisites, retake: true };
+      }
     }
+
+    for (const [code, course] of Object.entries(courseMap)) {
+      if (code in completedCourses || /[#*]/.test(code) || course.courseName === 'INTERNSHIP' || code in unlockedCourses || (code in currentSemesterCourses && !['W', 'I'].includes(currentSemesterCourses[code].grade))) continue;
+      if (code in preRegisteredCourses) {
+        unlockedCourses[code] = { courseName: course.courseName, credit: course.credit, prerequisites: course.prerequisites, retake: false };
+        continue;
+      }
+      if (!course.prerequisites.length || course.prerequisites.every(prereq => prereq in completedCourses || prereq in currentSemesterCourses)) {
+        unlockedCourses[code] = { courseName: course.courseName, credit: course.credit, prerequisites: course.prerequisites, retake: false };
+      }
+    }
+
+    const result = {
+      semesterClassRoutine: Object.fromEntries(Object.entries(semesterClassRoutine).sort()),
+      unlockedCourses,
+      completedCourses,
+      preRegisteredCourses,
+      currentSemester,
+      user,
+      curriculumCourses: courseMap,
+    };
+
+    res.write(`data: ${JSON.stringify({ status: 'complete', result })}\n\n`);
+    res.end();
+  } catch (err) {
+    res.write(`data: ${JSON.stringify({ status: 'error', message: err.message })}\n\n`);
+    res.end();
+  }
 };
 
-exports.logout = (req, res) => {
-    res.clearCookie("token");
-    res.json({ message: "Logout successful" });
-};
+module.exports = { loginHandler };

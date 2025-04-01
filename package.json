@@ -1,33 +1,22 @@
 {
-  "name": "api_test",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nazrulislam01865/API_Test.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/nazrulislam01865/API_Test/issues"
-  },
-  "homepage": "https://github.com/nazrulislam01865/API_Test#readme",
-  "description": "",
-  "dependencies": {
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "crypto-js": "^4.2.0",
-    "csurf": "^1.10.0",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "express-rate-limit": "^7.5.0",
-    "jsonwebtoken": "^9.0.2",
-    "puppeteer": "^24.4.0",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
-  }
+    "name": "aiub-api-express",
+    "version": "1.0.0",
+    "description": "Express.js API for AIUB Portal",
+    "main": "src/app.js",
+    "scripts": {
+        "start": "node app.js",
+        "dev": "nodemon app.js"
+    },
+    "dependencies": {
+        "axios": "^1.6.8",
+        "cheerio": "^1.0.0-rc.12",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.7",
+        "express": "^4.19.2",
+        "redis": "^4.6.13",
+        "web-push": "^3.5.0"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.0"
+    }
 }
